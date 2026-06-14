@@ -1,0 +1,26 @@
+{
+  "circuitGroups": [
+    {
+      "group": "甲",
+      "maxWattage": 10000
+    },
+    {
+      "group": "乙",
+      "maxWattage": 8000
+    },
+    {
+      "group": "丙",
+      "maxWattage": 6000
+    }
+  ],
+  "registrations": [
+    {
+      "id": "SB-MQDM4VAU-JERD",
+      "circuitGroup": "乙",
+      "boothNumber": "A-15",
+      "wattage": 2500,
+      "halfDay": "下午",
+      "createdAt": "2026-06-14T09:59:49.878Z"
+    }
+  ]
+}
