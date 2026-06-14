@@ -53,6 +53,14 @@
       "wattage": 15000,
       "halfDay": "下午",
       "createdAt": "2026-06-14T10:30:03.092Z"
+    },
+    {
+      "id": "SB-MQDNVLMG-6S5N",
+      "circuitGroup": "乙",
+      "boothNumber": "VERIFY-047-1781434116663",
+      "wattage": 500,
+      "halfDay": "上午",
+      "createdAt": "2026-06-14T10:48:36.664Z"
     }
   ]
 }

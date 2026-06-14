@@ -14,8 +14,10 @@ const STATS_HALF_DAY_OPTIONS = [
 export default function Home() {
   const {
     circuitStats,
+    formCircuitStats,
     selectedGroup,
     selectedStatsHalfDay,
+    preview,
     fetchCircuitStats,
     setSelectedGroup,
     setSelectedStatsHalfDay,
@@ -76,6 +78,8 @@ export default function Home() {
                   <CircuitCard
                     key={stats.group}
                     stats={stats}
+                    preview={preview}
+                    formCircuitStats={formCircuitStats}
                     selected={selectedGroup === stats.group}
                     onClick={() => setSelectedGroup(stats.group)}
                   />

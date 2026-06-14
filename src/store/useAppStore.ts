@@ -17,8 +17,16 @@ export interface Registration {
   createdAt: string
 }
 
+export interface PreviewState {
+  active: boolean
+  circuitGroup: string
+  halfDay: string
+  wattage: number
+}
+
 interface AppState {
   circuitStats: CircuitStats[]
+  formCircuitStats: CircuitStats[]
   registrations: Registration[]
   selectedGroup: string
   selectedStatsHalfDay: string
@@ -27,12 +35,16 @@ interface AppState {
   submitting: boolean
   lastSubmissionId: string | null
   submitError: string | null
+  preview: PreviewState
 
   setSelectedGroup: (group: string) => void
   setSelectedStatsHalfDay: (halfDay: string) => void
   setHalfDayFilter: (filter: string) => void
   clearSubmitError: () => void
+  setPreview: (p: Partial<PreviewState>) => void
+  resetPreview: () => void
   fetchCircuitStats: () => Promise<void>
+  fetchFormCircuitStats: (halfDay: string) => Promise<void>
   fetchRegistrations: () => Promise<void>
   submitRegistration: (data: {
     circuitGroup: string
@@ -44,6 +56,7 @@ interface AppState {
 
 export const useAppStore = create<AppState>((set, get) => ({
   circuitStats: [],
+  formCircuitStats: [],
   registrations: [],
   selectedGroup: '甲',
   selectedStatsHalfDay: '',
@@ -52,11 +65,35 @@ export const useAppStore = create<AppState>((set, get) => ({
   submitting: false,
   lastSubmissionId: null,
   submitError: null,
+  preview: {
+    active: false,
+    circuitGroup: '甲',
+    halfDay: '上午',
+    wattage: 0,
+  },
 
   setSelectedGroup: (group) => set({ selectedGroup: group }),
   setSelectedStatsHalfDay: (halfDay) => set({ selectedStatsHalfDay: halfDay }),
   setHalfDayFilter: (filter) => set({ halfDayFilter: filter }),
   clearSubmitError: () => set({ submitError: null }),
+
+  setPreview: (p) =>
+    set((state) => {
+      const next = { ...state.preview, ...p }
+      next.active =
+        !!next.circuitGroup && !!next.halfDay && typeof next.wattage === 'number' && next.wattage > 0
+      return { preview: next }
+    }),
+
+  resetPreview: () =>
+    set({
+      preview: {
+        active: false,
+        circuitGroup: '甲',
+        halfDay: '上午',
+        wattage: 0,
+      },
+    }),
 
   fetchCircuitStats: async () => {
     try {
@@ -71,6 +108,21 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
     } catch (e) {
       console.error('Failed to fetch circuit stats', e)
+    }
+  },
+
+  fetchFormCircuitStats: async (halfDay: string) => {
+    try {
+      const params = new URLSearchParams()
+      if (halfDay) params.set('halfDay', halfDay)
+      const url = `/api/circuits${params.toString() ? `?${params.toString()}` : ''}`
+      const res = await fetch(url)
+      const json = await res.json()
+      if (json.success) {
+        set({ formCircuitStats: json.data })
+      }
+    } catch (e) {
+      console.error('Failed to fetch form circuit stats', e)
     }
   },
 
@@ -103,8 +155,19 @@ export const useAppStore = create<AppState>((set, get) => ({
       })
       const json = await res.json()
       if (json.success) {
-        set({ lastSubmissionId: json.data.id, selectedGroup: data.circuitGroup, halfDayFilter: '' })
+        set({
+          lastSubmissionId: json.data.id,
+          selectedGroup: data.circuitGroup,
+          halfDayFilter: '',
+          preview: {
+            active: false,
+            circuitGroup: data.circuitGroup,
+            halfDay: data.halfDay,
+            wattage: 0,
+          },
+        })
         await get().fetchCircuitStats()
+        await get().fetchFormCircuitStats(get().preview.halfDay)
         await get().fetchRegistrations()
         return json.data.id
       }

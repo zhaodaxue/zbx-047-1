@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Send, CheckCircle, Loader2, AlertCircle } from 'lucide-react'
+import { Send, CheckCircle, Loader2, AlertCircle, ZapOff, Zap } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 
 const GROUPS = ['甲', '乙', '丙'] as const
@@ -7,14 +7,18 @@ const HALF_DAYS = ['上午', '下午'] as const
 
 export default function RegistrationForm() {
   const {
-    circuitStats,
+    formCircuitStats,
     submitting,
     lastSubmissionId,
     submitError,
     selectedGroup,
+    preview,
     submitRegistration,
     setSelectedGroup,
+    setPreview,
+    resetPreview,
     clearSubmitError,
+    fetchFormCircuitStats,
   } = useAppStore()
 
   const [circuitGroup, setCircuitGroup] = useState<string>(selectedGroup)
@@ -28,12 +32,29 @@ export default function RegistrationForm() {
   }, [selectedGroup])
 
   useEffect(() => {
+    fetchFormCircuitStats(halfDay)
+  }, [halfDay, fetchFormCircuitStats])
+
+  useEffect(() => {
     if (lastSubmissionId) {
       setShowSuccess(true)
       const timer = setTimeout(() => setShowSuccess(false), 4000)
       return () => clearTimeout(timer)
     }
   }, [lastSubmissionId])
+
+  useEffect(() => {
+    const w = wattage ? Number(wattage) : 0
+    if (!wattage || w <= 0) {
+      resetPreview()
+    } else {
+      setPreview({
+        circuitGroup,
+        halfDay,
+        wattage: w,
+      })
+    }
+  }, [circuitGroup, halfDay, wattage, setPreview, resetPreview])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -58,8 +79,18 @@ export default function RegistrationForm() {
     setSelectedGroup(g)
   }
 
-  const currentStats = circuitStats.find((s) => s.group === circuitGroup)
-  const isValid = boothNumber.trim() && Number(wattage) > 0
+  const currentStats = formCircuitStats.find((s) => s.group === circuitGroup)
+  const remainingWattage = currentStats ? currentStats.maxWattage - currentStats.totalWattage : null
+  const inputWatt = Number(wattage) || 0
+  const willOverload = remainingWattage !== null && inputWatt > remainingWattage && inputWatt > 0
+  const nearLimit =
+    remainingWattage !== null &&
+    currentStats &&
+    currentStats.maxWattage > 0 &&
+    remainingWattage / currentStats.maxWattage < 0.1 &&
+    remainingWattage >= 0
+
+  const isValid = boothNumber.trim() && Number(wattage) > 0 && !willOverload
 
   return (
     <div className="bg-gradient-to-br from-stone-800/90 to-stone-900/80 border border-stone-700/50 rounded-xl p-6">
@@ -150,12 +181,41 @@ export default function RegistrationForm() {
             onChange={(e) => setWattage(e.target.value)}
             placeholder="例如：1500"
             min="1"
-            className="w-full bg-stone-700/40 border border-stone-600/50 rounded-lg px-4 py-2.5 text-sm text-stone-100 placeholder-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all"
+            className={`
+              w-full rounded-lg px-4 py-2.5 text-sm transition-all focus:outline-none focus:ring-2 focus:border-amber-500/50
+              ${willOverload
+                ? 'bg-red-950/40 border border-red-600/60 text-red-200 placeholder-red-800/60 focus:ring-red-500/50'
+                : 'bg-stone-700/40 border border-stone-600/50 text-stone-100 placeholder-stone-600 focus:ring-amber-500/50'
+              }
+            `}
           />
           {currentStats && (
-            <p className={`text-xs mt-1.5 ${currentStats.overload ? 'text-red-400' : 'text-stone-500'}`}>
-              {currentStats.group}组当前已用 {currentStats.totalWattage.toLocaleString()}W / {currentStats.maxWattage.toLocaleString()}W
-            </p>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              {willOverload ? (
+                <>
+                  <ZapOff className="w-3 h-3 text-red-400" />
+                  <span className="text-xs text-red-400 font-medium">
+                    剩余容量不足！{circuitGroup}组{halfDay}剩余 {remainingWattage!.toLocaleString()}W，
+                    需申报 {inputWatt.toLocaleString()}W，超出 {Math.abs(remainingWattage! - inputWatt).toLocaleString()}W
+                  </span>
+                </>
+              ) : nearLimit ? (
+                <>
+                  <AlertCircle className="w-3 h-3 text-amber-400" />
+                  <span className="text-xs text-amber-400 font-medium">
+                    {circuitGroup}组{halfDay}仅剩 {remainingWattage!.toLocaleString()}W 可用（距上限不足 10%）
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Zap className="w-3 h-3 text-emerald-400" />
+                  <span className="text-xs text-stone-500">
+                    {circuitGroup}组{halfDay}剩余可用 {remainingWattage!.toLocaleString()}W
+                    （已用 {currentStats.totalWattage.toLocaleString()}W / {currentStats.maxWattage.toLocaleString()}W）
+                  </span>
+                </>
+              )}
+            </div>
           )}
         </div>
 
@@ -175,6 +235,11 @@ export default function RegistrationForm() {
               <Loader2 className="w-4 h-4 animate-spin" />
               提交中...
             </>
+          ) : willOverload ? (
+            <>
+              <ZapOff className="w-4 h-4" />
+              剩余容量不足，无法提交
+            </>
           ) : (
             <>
               <Send className="w-4 h-4" />
@@ -182,6 +247,15 @@ export default function RegistrationForm() {
             </>
           )}
         </button>
+
+        {preview.active && (
+          <div className="pt-3 border-t border-stone-700/50">
+            <p className="text-[11px] text-sky-400/70 flex items-center gap-1.5">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+              当前处于预演模式，上方对应电路卡片显示预计提交后的数据
+            </p>
+          </div>
+        )}
       </form>
     </div>
   )
