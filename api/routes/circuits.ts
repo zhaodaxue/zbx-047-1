@@ -3,8 +3,9 @@ import { getCircuitStats } from '../store.js'
 
 const router = Router()
 
-router.get('/', (_req: Request, res: Response) => {
-  const stats = getCircuitStats()
+router.get('/', (req: Request, res: Response) => {
+  const { halfDay } = req.query
+  const stats = getCircuitStats(halfDay as string | undefined)
   res.json({ success: true, data: stats })
 })
 

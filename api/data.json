@@ -21,6 +21,38 @@
       "wattage": 2500,
       "halfDay": "下午",
       "createdAt": "2026-06-14T09:59:49.878Z"
+    },
+    {
+      "id": "SB-MQDN3NA8-3E1P",
+      "circuitGroup": "丙",
+      "boothNumber": "123",
+      "wattage": 13,
+      "halfDay": "上午",
+      "createdAt": "2026-06-14T10:26:52.448Z"
+    },
+    {
+      "id": "SB-MQDN7QDH-7W40",
+      "circuitGroup": "甲",
+      "boothNumber": "BUG-TEST-1",
+      "wattage": 100,
+      "halfDay": "上午",
+      "createdAt": "2026-06-14T10:30:03.077Z"
+    },
+    {
+      "id": "SB-MQDN7QDT-LLSB",
+      "circuitGroup": "甲",
+      "boothNumber": "   ",
+      "wattage": 100,
+      "halfDay": "上午",
+      "createdAt": "2026-06-14T10:30:03.089Z"
+    },
+    {
+      "id": "SB-MQDN7QDW-4ZBZ",
+      "circuitGroup": "甲",
+      "boothNumber": "BUG-OVER",
+      "wattage": 15000,
+      "halfDay": "下午",
+      "createdAt": "2026-06-14T10:30:03.092Z"
     }
   ]
 }

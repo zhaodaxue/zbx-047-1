@@ -9,6 +9,7 @@ interface CircuitCardProps {
 
 export default function CircuitCard({ stats, selected, onClick }: CircuitCardProps) {
   const { group, totalWattage, maxWattage, loadPercent, overload } = stats
+  const displayPercent = Math.min(loadPercent, 100)
 
   return (
     <button
@@ -60,13 +61,16 @@ export default function CircuitCard({ stats, selected, onClick }: CircuitCardPro
           <span className={`text-xs ${overload ? 'text-red-400' : 'text-stone-500'}`}>负载率</span>
           <span className={`text-xs font-medium tabular-nums ${overload ? 'text-red-400' : 'text-amber-400'}`}>
             {loadPercent}%
+            {overload && loadPercent > 100 && (
+              <span className="ml-1 opacity-80">(超限)</span>
+            )}
           </span>
         </div>
         <div className={`h-2 rounded-full overflow-hidden ${overload ? 'bg-red-950' : 'bg-stone-700/50'}`}>
           <div
             className={`h-full rounded-full transition-all duration-700 ease-out
               ${overload ? 'bg-gradient-to-r from-red-600 to-red-400' : 'bg-gradient-to-r from-amber-600 to-amber-400'}`}
-            style={{ width: `${Math.min(loadPercent, 100)}%` }}
+            style={{ width: `${displayPercent}%` }}
           />
         </div>
       </div>

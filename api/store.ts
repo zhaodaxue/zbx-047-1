@@ -58,8 +58,19 @@ export function createRegistration(input: {
   boothNumber: string
   wattage: number
   halfDay: string
-}): Registration {
+}): Registration | { error: string } {
   const data = readData()
+
+  const duplicate = data.registrations.find(
+    (r) =>
+      r.circuitGroup === input.circuitGroup &&
+      r.halfDay === input.halfDay &&
+      r.boothNumber === input.boothNumber,
+  )
+  if (duplicate) {
+    return { error: `该摊位(${input.boothNumber})已在${input.circuitGroup}组${input.halfDay}申报过，请勿重复申报` }
+  }
+
   const id = `SB-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
   const registration: Registration = {
     id,
@@ -74,7 +85,7 @@ export function createRegistration(input: {
   return registration
 }
 
-export function getCircuitStats(): {
+export function getCircuitStats(halfDay?: string): {
   group: string
   totalWattage: number
   maxWattage: number
@@ -83,15 +94,18 @@ export function getCircuitStats(): {
 }[] {
   const data = readData()
   return data.circuitGroups.map((cg) => {
-    const totalWattage = data.registrations
-      .filter((r) => r.circuitGroup === cg.group)
-      .reduce((sum, r) => sum + r.wattage, 0)
+    const filtered = data.registrations.filter((r) => {
+      if (r.circuitGroup !== cg.group) return false
+      if (halfDay && r.halfDay !== halfDay) return false
+      return true
+    })
+    const totalWattage = filtered.reduce((sum, r) => sum + r.wattage, 0)
     const loadPercent = Math.round((totalWattage / cg.maxWattage) * 100)
     return {
       group: cg.group,
       totalWattage,
       maxWattage: cg.maxWattage,
-      loadPercent: Math.min(loadPercent, 999),
+      loadPercent,
       overload: totalWattage > cg.maxWattage,
     }
   })

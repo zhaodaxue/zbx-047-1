@@ -1,17 +1,31 @@
 import { useState, useEffect } from 'react'
-import { Send, CheckCircle, Loader2 } from 'lucide-react'
+import { Send, CheckCircle, Loader2, AlertCircle } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 
 const GROUPS = ['甲', '乙', '丙'] as const
 const HALF_DAYS = ['上午', '下午'] as const
 
 export default function RegistrationForm() {
-  const { circuitStats, submitting, lastSubmissionId, submitRegistration } = useAppStore()
-  const [circuitGroup, setCircuitGroup] = useState<string>('甲')
+  const {
+    circuitStats,
+    submitting,
+    lastSubmissionId,
+    submitError,
+    selectedGroup,
+    submitRegistration,
+    setSelectedGroup,
+    clearSubmitError,
+  } = useAppStore()
+
+  const [circuitGroup, setCircuitGroup] = useState<string>(selectedGroup)
   const [boothNumber, setBoothNumber] = useState('')
   const [wattage, setWattage] = useState('')
   const [halfDay, setHalfDay] = useState<string>('上午')
   const [showSuccess, setShowSuccess] = useState(false)
+
+  useEffect(() => {
+    setCircuitGroup(selectedGroup)
+  }, [selectedGroup])
 
   useEffect(() => {
     if (lastSubmissionId) {
@@ -23,6 +37,7 @@ export default function RegistrationForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    clearSubmitError()
     if (!boothNumber.trim() || !wattage) return
 
     const result = await submitRegistration({
@@ -36,6 +51,11 @@ export default function RegistrationForm() {
       setBoothNumber('')
       setWattage('')
     }
+  }
+
+  const handleGroupChange = (g: string) => {
+    setCircuitGroup(g)
+    setSelectedGroup(g)
   }
 
   const currentStats = circuitStats.find((s) => s.group === circuitGroup)
@@ -57,6 +77,13 @@ export default function RegistrationForm() {
         </div>
       )}
 
+      {submitError && (
+        <div className="mb-4 px-4 py-3 bg-red-900/30 border border-red-700/40 rounded-lg flex items-center gap-2 animate-fadeIn">
+          <AlertCircle className="w-4 h-4 text-red-400" />
+          <span className="text-sm text-red-300">{submitError}</span>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -66,7 +93,7 @@ export default function RegistrationForm() {
                 <button
                   key={g}
                   type="button"
-                  onClick={() => setCircuitGroup(g)}
+                  onClick={() => handleGroupChange(g)}
                   className={`
                     flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all
                     ${circuitGroup === g

@@ -5,14 +5,27 @@ import RegistrationForm from '@/components/RegistrationForm'
 import RegistrationSidebar from '@/components/RegistrationSidebar'
 import { Zap, Waves } from 'lucide-react'
 
+const STATS_HALF_DAY_OPTIONS = [
+  { label: '全部', value: '' },
+  { label: '上午', value: '上午' },
+  { label: '下午', value: '下午' },
+]
+
 export default function Home() {
-  const { circuitStats, selectedGroup, fetchCircuitStats, setSelectedGroup } = useAppStore()
+  const {
+    circuitStats,
+    selectedGroup,
+    selectedStatsHalfDay,
+    fetchCircuitStats,
+    setSelectedGroup,
+    setSelectedStatsHalfDay,
+  } = useAppStore()
 
   useEffect(() => {
     fetchCircuitStats()
     const interval = setInterval(fetchCircuitStats, 15000)
     return () => clearInterval(interval)
-  }, [fetchCircuitStats])
+  }, [fetchCircuitStats, selectedStatsHalfDay])
 
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100">
@@ -38,7 +51,26 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <section>
-              <h2 className="text-sm font-medium text-stone-400 mb-3 uppercase tracking-wider">电路组负载</h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-medium text-stone-400 uppercase tracking-wider">电路组负载</h2>
+                <div className="flex gap-1">
+                  {STATS_HALF_DAY_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setSelectedStatsHalfDay(opt.value)}
+                      className={`
+                        py-1.5 px-3 rounded-lg text-xs font-medium transition-all
+                        ${selectedStatsHalfDay === opt.value
+                          ? 'bg-amber-500 text-stone-900'
+                          : 'bg-stone-800/60 text-stone-400 hover:bg-stone-700/60 hover:text-stone-300'
+                        }
+                      `}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {circuitStats.map((stats) => (
                   <CircuitCard
@@ -49,6 +81,11 @@ export default function Home() {
                   />
                 ))}
               </div>
+              <p className="text-xs text-stone-600 mt-2">
+                {selectedStatsHalfDay
+                  ? `当前显示「${selectedStatsHalfDay}」时段负载数据`
+                  : '当前显示全部时段汇总负载数据'}
+              </p>
             </section>
 
             <section>

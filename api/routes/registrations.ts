@@ -47,14 +47,19 @@ router.post('/', (req: Request, res: Response) => {
     return
   }
 
-  const registration = createRegistration({
+  const result = createRegistration({
     circuitGroup,
     boothNumber,
     wattage,
     halfDay,
   })
 
-  res.status(201).json({ success: true, data: registration })
+  if ('error' in result) {
+    res.status(409).json({ success: false, error: result.error })
+    return
+  }
+
+  res.status(201).json({ success: true, data: result })
 })
 
 export default router
